@@ -1,0 +1,39 @@
+{
+  "name": "general",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "bin": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  },
+  "backup": {
+    "pkg": {
+      "targets": [
+        "node14-win-x64"
+      ],
+      "assets": [
+        "config/.env"
+      ],
+      "scripts": [
+        "I:/ReactJS Projects/general/config/*.js",
+        "I:/ReactJS Projects/general/dao/*.js",
+        "I:/ReactJS Projects/general/route/*.js"
+      ]
+    }
+  }
+}
