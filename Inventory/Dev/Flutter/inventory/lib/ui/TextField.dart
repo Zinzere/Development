@@ -32,7 +32,7 @@ width: 60,)
 TextStyle labelStyle = TextStyle(color: Colors.purple,fontStyle: FontStyle.italic, fontSize: 18);
 
 class TFPlain extends StatefulWidget {
-  TFPlain({@required this.cntrolr,this.label,this.onChanged, this.inputType,this.txtAlign, this.focus, this.icon});
+  TFPlain({@required this.cntrolr,this.label,this.onChanged, this.inputType,this.txtAlign, this.focus, this.icon, this.textCapital});
   final TextEditingController cntrolr;
   final ValueChanged<dynamic> onChanged;
   final String label;
@@ -40,6 +40,7 @@ class TFPlain extends StatefulWidget {
   final TextAlign txtAlign;
   final bool focus;
   final IconData icon;
+  final TextCapitalization textCapital;
 
   @override
   State<TFPlain> createState() => _TFPlainState();
@@ -51,7 +52,7 @@ class _TFPlainState extends State<TFPlain> {
     return TextField(
       autofocus: widget.focus ?? false,
       textAlign: widget.txtAlign ?? TextAlign.start,
-      textCapitalization: TextCapitalization.sentences,
+      textCapitalization: widget.textCapital ?? TextCapitalization.sentences,
       keyboardType: widget.inputType ?? TextInputType.text,
       controller: widget.cntrolr,
       decoration: widget.icon==null ? noIcon(widget.label) : icon(widget.icon,widget.label)
