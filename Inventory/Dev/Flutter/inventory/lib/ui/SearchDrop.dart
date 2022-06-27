@@ -1,114 +1,272 @@
+/*
+SearchField(
+  showKeyList: ["NAME","-","TYPE"],
+  futureOrList: (val) async {
+    var data = await Calls.search({"name":val});
+      if(data["res"]){
+      return data["data"];
+      } else {
+      return [];
+      }
+    },
+  width: 200,
+  onSelected:(val) {
+    print(val);
+  }),
+*/
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:inventory/ui/AllUi.dart';
-import 'dart:math' as math;
-import 'package:flutter/src/material/constants.dart';
 
-const double _kMenuItemHeight = kMinInteractiveDimension;
+TextEditingController searchController = TextEditingController();
+typedef FutureOr<dynamic> futureListCallBack(String pattern);
 
-class SearchDrop extends StatefulWidget {
+class SearchField extends StatefulWidget {
+  SearchField({@required this.onSelected, this.showKeyList, this.futureOrList, this.width = 400, this.label = "Search Here"});
+
+  final Function(dynamic) onSelected; //If selected returns
+  final futureListCallBack futureOrList; //Future or List
+  final double width; //Width if want to adjust
+  final String label; //Label of Search text Field
+  final List<String> showKeyList; //List of Key's value will be shown in Search List
 
   @override
-  State<SearchDrop> createState() => _SearchDropState();
+  State<SearchField> createState() => _SearchFieldState();
 }
 
-class _SearchDropState extends State<SearchDrop> with TickerProviderStateMixin {
-  AnimationController animation;
-  @override
-  void initState() {
-    super.initState();
-    animation = new AnimationController(
-      duration: const Duration(milliseconds: 900),
-      vsync: this,
-    );
-    animation.forward();
+class _SearchFieldState extends State<SearchField> {
+  Size screenSize;
+  NavigatorState navigator;
+  RenderBox itemBox;
+  Rect itemRect;
+  bool positionCheck = false; //fasle position values not generated | true generated
+  getPosition() {
+    navigator = Navigator.of(context);
+    itemBox = context.findRenderObject() as RenderBox;
+    itemRect = itemBox.localToGlobal(Offset.zero, ancestor: navigator.context.findRenderObject()) & itemBox.size;
+    positionCheck = true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 500,
-      height: 500,
-      color: Colors.black12,
-      child: Container(
-        padding: EdgeInsets.all(50),
-        width: 100,
-        height: 100,
-        child: CustomPaint(
-        painter: _DropdownMenuPainter(
-            color: Colors.green,
-            elevation:8,
-            animation: animation,
-            borderRadius: BorderRadius.all(Radius.circular(2.0)),
-          )
+    screenSize = MediaQuery.of(context).size;
+
+    return IntrinsicWidth(
+      stepWidth: widget.width,
+      child: TextField(
+        controller: searchController,
+        decoration: InputDecoration(
+            contentPadding: EdgeInsets.only(left: 2.0, right: 2),
+            labelText: widget.label,
+            labelStyle: TextStyle(
+                color: Colors.purple, fontStyle: FontStyle.italic, fontSize: 18)
         ),
+        onTap: () {
+          if (!positionCheck) {
+            getPosition();
+          }
+          Navigator.push(context,
+              PopupWidget(
+                  buttonRect: itemRect,
+                  futureOrList: widget.futureOrList,
+                  showKeyList: widget.showKeyList,
+                  onSelected: widget.onSelected,
+                  label: widget.label,
+                  width: widget.width,
+                  screenSize: screenSize
+              ));
+        },
+        onChanged: (val) {
+          Navigator.push(context,
+              PopupWidget(
+                  buttonRect: itemRect,
+                  futureOrList: widget.futureOrList,
+                  showKeyList: widget.showKeyList,
+                  onSelected: widget.onSelected,
+                  label: widget.label,
+                  width: widget.width,
+                  screenSize: screenSize
+              ));
+        },
       ),
     );
   }
 }
 
-class _DropdownMenuPainter extends CustomPainter {
-  _DropdownMenuPainter({
-    this.color,
-    this.elevation,
-    this.animation,
-    //this.selectedIndex,
-    this.borderRadius,
-    // required this.resize,
-    // required this.getSelectedItemOffset,
-  }) : _painter = BoxDecoration(
-    // If you add an image here, you must provide a real
-    // configuration in the paint() function and you must provide some sort
-    // of onChanged callback here.
-    color: color,
-    borderRadius: borderRadius ?? const BorderRadius.all(Radius.circular(2.0)),
-    boxShadow: kElevationToShadow[elevation],
-  ).createBoxPainter(),
-        super(repaint: CurvedAnimation(
-        parent: animation,
-        curve: const Interval(0.25, 0.5),
-        reverseCurve: const Threshold(0.0),
-      ));
+class PopupWidget extends PopupRoute {
+  PopupWidget({this.buttonRect, this.screenSize, this.futureOrList, this.onSelected, this.width, this.label, this.showKeyList});
 
-  final Color color;
-  final int elevation;
-  final Animation animation;
-  //final int selectedIndex;
-  final BorderRadius borderRadius;
-  // final Animation<double> resize;
-  // final ValueGetter<double> getSelectedItemOffset;
-  final BoxPainter _painter;
+  final Rect buttonRect;
+  final futureListCallBack futureOrList;
+  final Function(dynamic) onSelected;
+  final double width;
+  String label;
+  final List<String> showKeyList;
+  final Size screenSize;
+  List<dynamic> searchResult = [];
 
   @override
-  void paint(Canvas canvas, Size size) {
-    //final double selectedItemOffset = getSelectedItemOffset();
-    final Tween<double> top = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
+  Color get barrierColor => null;
+
+  @override
+  bool get barrierDismissible => true;
+
+  @override
+  String get barrierLabel => "";
+
+  @override
+  Duration get transitionDuration => Duration(milliseconds: 100);
+
+  _dismiss() {
+    navigator.removeRoute(this);
+  }
+  bool upOrDown = false; //false down | true means up
+
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation,Animation<double> secondaryAnimation) {
+    bool upOrDown = _upDownCheck(buttonRect.top,screenSize.height);
+    return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                Widget items(kv) {
+                  String displayText = "";
+                  if (this.showKeyList != null) {
+                    for (var i = 0; i < this.showKeyList.length; i++) {
+                      String displayKey = this.showKeyList[i];
+                      displayText = displayText + (kv[displayKey] ?? displayKey);
+                    }
+                  } else {
+                    displayText = displayText + kv[kv.keys[0]];
+                  }
+                  return TextButton(
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.only(left: 2, top: 15, bottom: 15)),
+                      foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+                      backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).canvasColor),
+                    ),
+                    onPressed:(){
+                      searchController.text = displayText;
+                      this.onSelected(kv);
+                      _dismiss();
+                    },
+                    child: Align(child: Text(displayText, textAlign: TextAlign.start,), alignment: Alignment.centerLeft,),
+                  );
+                }
+                Widget txtField(){
+                  return Container(
+                    color:Theme.of(context).canvasColor,
+                    child:TextField(
+                        autofocus: true,
+                        controller:searchController,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.only(left: 2.0, right: 2),
+                        ),
+                        onChanged:(val) async {
+                          if(val.length>0){
+                            searchResult = await this.futureOrList(val);
+                            if(searchResult.length>7) {
+                             searchResult = searchResult.sublist(0,7);
+                            }
+                            setState(() => {});
+                          }
+                        }
+                    ),
+                  );
+                }
+                return CustomSingleChildLayout(
+                  delegate: SingleChildDelegateWidget(
+                      buttonRect: buttonRect,
+                      screenSize: screenSize,
+                      upOrDown:upOrDown
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: FadeTransition(
+                       opacity: CurvedAnimation(
+                       parent:animation,
+                       curve: const Interval(0.0,1),
+                       reverseCurve: const Interval(0.75,1.0),
+                      ),
+                      child: Container(
+                        width: width,
+                        child: upOrDown ? Column( //True ? Up : Down
+                          children:[
+                            SizedBox(
+                              height:200,
+                              child:ListView(
+                                shrinkWrap: true,
+                                reverse: true,
+                                children:[
+                                  for(var res in searchResult) items(res)
+                                ],
+                              ),
+                            ),
+                            txtField(),
+                          ],
+                        ) : Column(
+                          children:[
+                            txtField(),
+                            ListView(
+                              padding: EdgeInsets.only(top: 2),
+                              shrinkWrap: true,
+                              children: [
+                                for(var res in searchResult) items(res)
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+          );
+        }
     );
+  }
+}
 
-    final Tween<double> bottom = Tween<double>(
-      begin: (top.begin + _kMenuItemHeight).clamp(math.min(_kMenuItemHeight, size.height), size.height),
-      end: size.height,
+class SingleChildDelegateWidget extends SingleChildLayoutDelegate {
+  SingleChildDelegateWidget({this.buttonRect, this.screenSize,this.upOrDown});
+
+  final Rect buttonRect;
+  final Size screenSize;
+  bool upOrDown;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    double height=0;
+    if(upOrDown){ //True => Up
+      height = 260;
+    } else { //False => Down
+      height = screenSize.height + 100;//Good to go
+    }
+    return BoxConstraints(
+      minWidth: buttonRect.width,
+      maxWidth: buttonRect.width,
+      maxHeight: height,
     );
-
-    final Rect rect = Rect.fromLTRB(0.0, top.evaluate(CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.25, 0.5),
-      reverseCurve: const Threshold(0.0),
-    )), size.width, bottom.evaluate(CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.25, 0.5),
-      reverseCurve: const Threshold(0.0),
-    )));
-
-    _painter.paint(canvas, rect.topLeft, ImageConfiguration(size: rect.size));
   }
 
   @override
-  bool shouldRepaint(_DropdownMenuPainter oldPainter) {
-    return oldPainter.color != color
-        || oldPainter.elevation != elevation
-        //|| oldPainter.selectedIndex != selectedIndex
-        || oldPainter.borderRadius != borderRadius;
+  Offset getPositionForChild(Size size, Size childSize) {
+    if(upOrDown){ //True => Up
+      return Offset(buttonRect.left,buttonRect.top * 0.61);
+    } else { //False => Down
+      return Offset(buttonRect.left,buttonRect.top + 1); //Good to go
+    }
+  }
+
+  @override
+  bool shouldRelayout(covariant SingleChildLayoutDelegate oldDelegate) {
+    return false;
+  }
+}
+
+_upDownCheck(top,height){
+  if(height*0.70<top) { //True => Up
+    return true;
+  } else { //False => Down
+    return false;
   }
 }
