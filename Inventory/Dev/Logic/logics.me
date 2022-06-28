@@ -1,1 +1,190 @@
 
+import 'package:flutter/material.dart';
+import '../pages/AllPages.dart';
+import '../layout/AllLayout.dart';
+import '../pages/OrderStatus.dart';
+import '../pages/ContactPage.dart';
+import '../pages/StockPage.dart';
+import 'package:inventory/Test/general.dart';
+import '../ui/AllUi.dart';
+import 'package:desktop_window/desktop_window.dart';
+
+class HomePage extends StatefulWidget {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  //List<int> abc = [1,2,3];
+  Widget ShowWidget = OrderPage();
+
+  // getWindowSize() async {
+  //   Size size = await DesktopWindow.getWindowSize();
+  //   await DesktopWindow.setMaxWindowSize(Size(1500,1000));
+  //   await DesktopWindow.resetMaxWindowSize();
+  //   await DesktopWindow.toggleFullScreen();
+  //   bool isFullScreen = await DesktopWindow.getFullScreen();
+  //   await DesktopWindow.setFullScreen(true);
+  //   await DesktopWindow.setFullScreen(false);
+  //   setState(()=>{});
+  // }
+  // @override
+  // initState(){
+  //   getWindowSize();
+  // }
+  @override
+  Widget build(BuildContext context) {
+    var serverData = {
+      "res": true,
+      "data": [
+        {
+          "NAME": "Client1",
+          "ID": 3,
+          "BILL_NO": "OR-01",
+          "BILL_DATE": "2022-01-10",
+          "DEL_DATE": "2022-02-10",
+          "TOTAL": 230,
+          "BILL_STATUS": "Work In Progress",
+          "MAT": "Out of Stock",
+          "STOCK": {
+            "Fabric White": {
+              "STOCK": 5,
+              "ITM_ID": 1,
+              "NEED": 7.5,
+              "BAL": "-2.50"
+            },
+            "Fabric Red": {
+              "STOCK": 2,
+              "ITM_ID": 2,
+              "NEED": 12,
+              "BAL": "-10.00"
+            },
+            "Thread": {
+              "STOCK": 100,
+              "ITM_ID": 3,
+              "NEED": 26,
+              "BAL": "74.00"
+            }
+          },
+          "JOB": "Work In Progress",
+          "JOB_DTL": [
+            {
+              "ID": 11,
+              "NAME": "Cutting",
+              "QTY": 16,
+              "COMP": 5,
+              "NEED": 11
+            },
+            {
+              "ID": 12,
+              "NAME": "Stitching",
+              "QTY": 16,
+              "COMP": 5,
+              "NEED": 11
+            }
+          ]
+        },
+        {
+          "NAME": "Client2",
+          "ID": 5,
+          "BILL_NO": "OR-02",
+          "BILL_DATE": "2022-04-20",
+          "DEL_DATE": "2022-06-22",
+          "TOTAL": 450,
+          "BILL_STATUS": "Work In Progress",
+          "MAT": "Out of Stock",
+          "STOCK": {
+            "Fabric White": {
+              "STOCK": 5,
+              "ITM_ID": 1,
+              "NEED": 3,
+              "BAL": "-5.50"
+            },
+            "Fabric Red": {
+              "STOCK": 2,
+              "ITM_ID": 2,
+              "NEED": 13.2,
+              "BAL": "-23.20"
+            },
+            "Thread": {
+              "STOCK": 100,
+              "ITM_ID": 3,
+              "NEED": 26,
+              "BAL": "48.00"
+            }
+          },
+          "JOB": "Not Yet Started",
+          "JOB_DTL": [
+            {
+              "ID": 11,
+              "NAME": "Cutting",
+              "QTY": 13,
+              "COMP": 0,
+              "NEED": 13
+            },
+            {
+              "ID": 12,
+              "NAME": "Stitching",
+              "QTY": 13,
+              "COMP": 0,
+              "NEED": 13
+            }
+          ]
+        }
+      ]
+    };
+    List json = serverData["data"];
+    Map<String, double> result = {};
+    json.forEach((rec) => {
+          if (rec["MAT"] == "Out of Stock")
+            {
+              rec["STOCK"].forEach((key, value) {
+               // print(key);
+                var balConvert = double.parse(value["BAL"]);
+                //print(balConvert);
+                if (balConvert.isNegative) {
+                  if (result.containsKey(key)) {
+                    result[key] = result[key] + balConvert;
+
+                  } else {
+                    result[key] = balConvert;
+                   // print(result[key] );
+
+                  }
+                }
+              }),
+            }
+        });
+   // print(result);
+    return MApp(
+        appBar: PreferredSize(
+            preferredSize: Size.fromHeight(80.0),
+            child: Navigate(onSelected: (value) => menuSelected(value))),
+        child: SingleChildScrollView(child: ShowWidget));
+  }
+
+  menuSelected(value) {
+    if (value == "REPORTS") {
+      ShowWidget = GeneralPage();
+    } else if (value == "SETTINGS") {
+      ShowWidget = SettingsPage();
+    } else if (value == "SELL") {
+      ShowWidget = OrderPage();
+    } else if (value == "CONTACTS") {
+      ShowWidget = ContactPage();
+    }else if (value == "STOCK") {
+      ShowWidget = StockPage();
+    }
+    setState(() {});
+  }
+}
+/*
+"REPORTS"
+"SELL"
+"MAKE"
+"BUY"
+"STOCK"
+"ITEMS"
+"CONTACTS"
+"SETTINGS"
+*/
