@@ -1,18 +1,34 @@
+/*
+SearchField(
+  showKeyList: ["NAME","-","TYPE"],
+  futureOrList: (val) async {
+    var data = await Calls.search({"name":val});
+      if(data["res"]){
+      return data["data"];
+      } else {
+      return [];
+      }
+    },
+  width: 200,
+  onSelected:(val) {
+    print(val);
+  }),
+*/
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-TextEditingController searchController = TextEditingController();
+//TextEditingController searchController = TextEditingController();
 typedef FutureOr<dynamic> futureListCallBack(String pattern);
 
 class SearchField extends StatefulWidget {
-  SearchField({@required this.onSelected, this.showKeyList, this.futureOrList, this.width = 400, this.label = "Search Here"});
+  SearchField({@required this.onSelected,this.controller, this.showKeyList, this.futureOrList, this.width = 400, this.label = "Search Here"});
 
   final Function(dynamic) onSelected; //If selected returns
   final futureListCallBack futureOrList; //Future or List
   final double width; //Width if want to adjust
   final String label; //Label of Search text Field
   final List<String> showKeyList; //List of Key's value will be shown in Search List
-
+  final TextEditingController controller;
   @override
   State<SearchField> createState() => _SearchFieldState();
 }
@@ -26,9 +42,7 @@ class _SearchFieldState extends State<SearchField> {
   getPosition() {
     navigator = Navigator.of(context);
     itemBox = context.findRenderObject() as RenderBox;
-    itemRect = itemBox.localToGlobal(
-        Offset.zero, ancestor: navigator.context.findRenderObject()) & itemBox
-        .size;
+    itemRect = itemBox.localToGlobal(Offset.zero, ancestor: navigator.context.findRenderObject()) & itemBox.size;
     positionCheck = true;
   }
 
@@ -39,7 +53,7 @@ class _SearchFieldState extends State<SearchField> {
     return IntrinsicWidth(
       stepWidth: widget.width,
       child: TextField(
-        controller: searchController,
+        controller: widget.controller,
         decoration: InputDecoration(
             contentPadding: EdgeInsets.only(left: 2.0, right: 2),
             labelText: widget.label,
@@ -52,6 +66,7 @@ class _SearchFieldState extends State<SearchField> {
           }
           Navigator.push(context,
               PopupWidget(
+                  controllers: widget.controller,
                   buttonRect: itemRect,
                   futureOrList: widget.futureOrList,
                   showKeyList: widget.showKeyList,
@@ -64,6 +79,7 @@ class _SearchFieldState extends State<SearchField> {
         onChanged: (val) {
           Navigator.push(context,
               PopupWidget(
+                  controllers: widget.controller,
                   buttonRect: itemRect,
                   futureOrList: widget.futureOrList,
                   showKeyList: widget.showKeyList,
@@ -79,8 +95,9 @@ class _SearchFieldState extends State<SearchField> {
 }
 
 class PopupWidget extends PopupRoute {
-  PopupWidget({this.buttonRect, this.screenSize, this.futureOrList, this.onSelected, this.width, this.label, this.showKeyList});
+  PopupWidget({this.buttonRect,this.controllers, this.screenSize, this.futureOrList, this.onSelected, this.width, this.label, this.showKeyList});
 
+  final TextEditingController controllers;
   final Rect buttonRect;
   final futureListCallBack futureOrList;
   final Function(dynamic) onSelected;
@@ -126,12 +143,12 @@ class PopupWidget extends PopupRoute {
                   }
                   return TextButton(
                     style: ButtonStyle(
-                      padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.only(left: 2)),
+                      padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.only(left: 2, top: 15, bottom: 15)),
                       foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
                       backgroundColor: MaterialStateProperty.all<Color>(Theme.of(context).canvasColor),
                     ),
                     onPressed:(){
-                      searchController.text = displayText;
+                      controllers.text = displayText;
                       this.onSelected(kv);
                       _dismiss();
                     },
@@ -143,14 +160,16 @@ class PopupWidget extends PopupRoute {
                     color:Theme.of(context).canvasColor,
                     child:TextField(
                         autofocus: true,
-                        controller:searchController,
+                        controller:controllers,
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.only(left: 2.0, right: 2),
                         ),
                         onChanged:(val) async {
                           if(val.length>0){
-                            //searchResult = data.where((listValue) => listValue.toLowerCase().contains(val.toLowerCase())).toList();
                             searchResult = await this.futureOrList(val);
+                            if(searchResult.length>7) {
+                             searchResult = searchResult.sublist(0,7);
+                            }
                             setState(() => {});
                           }
                         }
@@ -166,39 +185,38 @@ class PopupWidget extends PopupRoute {
                   child: Material(
                     color: Colors.transparent,
                     child: FadeTransition(
-                      opacity: CurvedAnimation(
-                        parent:animation,
-                        curve: const Interval(0.0, 0.25),
-                        reverseCurve: const Interval(0.75, 1.0),
+                       opacity: CurvedAnimation(
+                       parent:animation,
+                       curve: const Interval(0.0,1),
+                       reverseCurve: const Interval(0.75,1.0),
                       ),
                       child: Container(
                         width: width,
-                        child: SingleChildScrollView(
-                          child: upOrDown ? Column( //True ? Up : Down
-                            children:[
-                              SizedBox(
-                                height: 200,
-                                child: ListView(
-                                  shrinkWrap: true,
-                                  reverse: true,
-                                  children:[
-                                    for(var res in searchResult) items(res)
-                                  ],
-                                ),
-                              ),
-                              txtField(),
-                            ],
-                          ) : Column(
-                            children:[
-                              txtField(),
-                              ListView(
+                        child: upOrDown ? Column( //True ? Up : Down
+                          children:[
+                            SizedBox(
+                              height:200,
+                              child:ListView(
                                 shrinkWrap: true,
-                                children: [
+                                reverse: true,
+                                children:[
                                   for(var res in searchResult) items(res)
                                 ],
-                              )
-                            ],
-                          ),
+                              ),
+                            ),
+                            txtField(),
+                          ],
+                        ) : Column(
+                          children:[
+                            txtField(),
+                            ListView(
+                              padding: EdgeInsets.only(top: 2),
+                              shrinkWrap: true,
+                              children: [
+                                for(var res in searchResult) items(res)
+                              ],
+                            )
+                          ],
                         ),
                       ),
                     ),
@@ -222,9 +240,9 @@ class SingleChildDelegateWidget extends SingleChildLayoutDelegate {
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
     double height=0;
     if(upOrDown){ //True => Up
-      height = 200;
+      height = 260;
     } else { //False => Down
-      height = screenSize.height - buttonRect.top - 20;
+      height = screenSize.height + 100;//Good to go
     }
     return BoxConstraints(
       minWidth: buttonRect.width,
@@ -235,11 +253,10 @@ class SingleChildDelegateWidget extends SingleChildLayoutDelegate {
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
-
     if(upOrDown){ //True => Up
-      return Offset(buttonRect.left,buttonRect.top - 152);
+      return Offset(buttonRect.left,buttonRect.top * 0.61);
     } else { //False => Down
-      return Offset(buttonRect.left,buttonRect.top);
+      return Offset(buttonRect.left,buttonRect.top + 1); //Good to go
     }
   }
 
