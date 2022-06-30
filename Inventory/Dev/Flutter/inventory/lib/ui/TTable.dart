@@ -2,17 +2,27 @@ import 'package:flutter/material.dart';
 import 'TTableDropDown.dart';
 
 /*
---> WidgetList Types -> button,txt,funTxt,dropdown
-'wid':[{'type':'button','flex':1,'change':{'color':{'100':Colors.amber[800],'101':Colors.pink,'102':Colors.teal}}},
-{'type':'txt','flex':1},
-{'type':'funTxt','flex':1,'fun':function},
-{'type':'dropdown','flex':1,'list':['Not Yet Started','Work In Progress','Delivered','Blocked'],'id':'return'}],
---> Header List
-'header':{'ID':'id','Book':'title','Return':'return','Author':'name'},
---> Data List
-'data':[{'id':100,'title':'Flutter Basics','author':'David John','return':34,'name':'Delivered'},
-{'id': 101,'title':'Flutter Advanced','author':'David John','return':35,'name':'Not Yet Started'},
-{'id': 102,'title':'Git and GitHub','author':'Merlin Nick','return':36,'name':'Work In Progress'}]
+--> WidgetList Types -> button,txt,funTxt,dropdown,link
+TTables(
+    data: [{'id':100,'title':'Flutter Basics','author':'David John','return':34,'name':'Delivered','date':'2022-01-01'},
+      {'id': 101,'title':'Flutter Advanced','author':'David John','return':35,'name':'Not Yet Started','date':'2022-05-31'},
+      {'id': 102,'title':'Git and GitHub','author':'Merlin Nick','return':36,'name':'Work In Progress','date':'2022-01-01'},
+      {'id': 102,'title':'Git and GitHub','author':'Merlin Nick','return':36,'name':'Work In Progress','date':'2022-01-01'},
+      {'id': 102,'title':'Git and GitHub','author':'Merlin Nick','return':36,'name':'Work In Progress','date':'2022-01-01'},
+      {'id': 101,'title':'Flutter Advanced','author':'David John','return':35,'name':'Not Yet Started','date':'2022-05-31'}
+    ],
+    headerList: {'ID':'id','Date':'date','Book':'title','Author':'name'},
+    widList:[
+      {'type':'txt','flex':1},
+      {'type':'funTxt','flex':1,'fun':testFun},
+      {'type':'link','flex':1,'click':{'return':'id','fun':click},},
+      {'type':'button','flex':1,
+        'color':{'Flutter Basics':'orange','Flutter Advanced':'red','Git and GitHub':'green'},
+        'click':{'return':'id','fun':click},
+      },
+      {'type':'dropdown','flex':1,'click':{'return':'id','fun':optFun},
+        'list':['Not Yet Started','Work In Progress','Delivered','Blocked']}],
+  )
 */
 
 class TTables extends StatefulWidget{
@@ -45,12 +55,12 @@ class _TTablesState extends State<TTables> {
       }break;
       case "orange": {
         btnColor = Colors.amber[800];
-      }break;
+      } break;
     }
     return Padding(
       padding: const EdgeInsets.all(1.0),
       child: ElevatedButton(
-        onPressed:() {
+        onPressed:(){
           var fun=WidList[i]["click"]["fun"];
           fun(sendData);
         },
@@ -60,6 +70,22 @@ class _TTablesState extends State<TTables> {
               borderRadius: BorderRadius.zero,
             ),
             fixedSize: const Size(240, 80), primary: btnColor),
+      ),
+    );
+  }
+  Widget Link(val,i,sendData){
+    return Center(
+      child: InkWell(
+          child: Text(val,
+              style:TextStyle(
+                color: Colors.blueAccent,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,)),
+          onTap:(){
+            var fun=WidList[i]["click"]["fun"];
+            fun(sendData);
+          }
       ),
     );
   }
@@ -136,6 +162,10 @@ class _TTablesState extends State<TTables> {
       } else if(type=='button'){
         rowCell.add(Cell(
             Button(eachKV[ColNameList[i]],i,eachKV[WidList[i]['click']['return']].toString()),
+            flex:WidList[i]['flex']));
+      } else if(type=='link'){
+        rowCell.add(Cell(//{'type':'link','flex':1,'click':{'return':'id','fun':click},
+            Link(eachKV[ColNameList[i]],i,eachKV[WidList[i]['click']['return']].toString()),
             flex:WidList[i]['flex']));
       } else if(type=='dropdown'){
         rowCell.add(Cell(
