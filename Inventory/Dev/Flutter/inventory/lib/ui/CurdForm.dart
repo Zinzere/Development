@@ -228,7 +228,8 @@ class _CurdFormState extends State<CurdForm> {
                 formTxtFiledCntrlList=[];
                 widget.data[idx][currKey]=val; //Issue here | When select search values changing
               } else {
-                widget.data[idx][currKey]="";
+                formTxtFiledCntrlList=[];
+                widget.data[idx][currKey]={};
               }
               setState(()=>{});
               widget.onChange(sendData());
