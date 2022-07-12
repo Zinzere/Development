@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:inventory/ui/AllUi.dart';
 import '../ui/SearchField.dart';
@@ -44,6 +46,7 @@ Container(
     }
   }
 */
+
 List<dynamic> formTxtFiledCntrlList = [];
 
 class CurdForm extends StatefulWidget {
@@ -70,18 +73,22 @@ class _CurdFormState extends State<CurdForm> {
   int idx = 0;int len = 0;
   List<String> headerValues,headerKeys = [];
   bool updTextFldCntrlBool = true;
-  Map sendMap = {"res":false,"data":[]};
-
+  Map sendMap = {"res":false,"data":[],"del":[]};
+  List backup = [];
   @override
-  Widget build(BuildContext context) {
-    if(headerKeys.length==0) {
+  Widget build(BuildContext context){
+    len=widget.data.length;
+    if(headerKeys.length==0){
+      backup=jsonDecode(jsonEncode(widget.data));
       headerKeys = widget.headerList.keys.toList();
       if(widget.action){
         headerKeys.add("Action");
       }
       headerValues = widget.headerList.values.toList();
+      for(var vals in widget.data){
+        vals["flag"]="";
+      }
     }
-    len=widget.data.length;
     Widget Rows(rowMap){
       List<Widget> rows=[];
       idx = formTxtFiledCntrlList.length;
@@ -116,73 +123,81 @@ class _CurdFormState extends State<CurdForm> {
         }
       }
       if(widget.action){
-        if(len==idx+1){
-            var sendMap = widget.data[0];
-            rows.add(addIcon(sendMap,idx));
-        } else {
           rows.add(delIcon(idx));
-        }
       }
       return Row(
         children: rows,
       );
     }
     return SingleChildScrollView(
-        child: Container(
-          child: Column(
-            children: [
-              Row(
-                children:[
-                  for(var i=0;i<headerKeys.length;i++) headerKeys[i]=="Action" ? Container(
-                      width: 100,
-                      child: Center(
-                        child: Text(headerKeys[i], style: TextStyle(fontWeight: FontWeight.bold),),
+        child: Column(
+          children: [
+            Container(
+              child: Column(
+                children: [
+                  Row(
+                    children:[
+                      for(var i=0;i<headerKeys.length;i++) headerKeys[i]=="Action" ? Container(
+                          width: 100,
+                          child: Center(
+                            child: Text(headerKeys[i], style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                        height: 30,
+                        decoration: topLeft(Colors.transparent),
+                      ) : Expanded(
+                        flex: widget.flex[i],
+                        child: Container(
+                          child: Center(
+                            child: Text(headerKeys[i], style: TextStyle(fontWeight: FontWeight.bold),),
+                          ),
+                          height: 30,
+                          decoration: topLeft(Colors.transparent),
+                        ),
                       ),
-                    height: 30,
-                    decoration: topLeft(Colors.transparent),
-                  ) : Expanded(
-                    flex: widget.flex[i],
-                    child: Container(
-                      child: Center(
-                        child: Text(headerKeys[i], style: TextStyle(fontWeight: FontWeight.bold),),
-                      ),
-                      height: 30,
-                      decoration: topLeft(Colors.transparent),
-                    ),
+                    ],
                   ),
-                ],
+                  for(var rws in widget.data) Rows(rws),
+               ],
               ),
-              for(var rws in widget.data) Rows(rws)
-           ],
-          ),
-          decoration: btmRight(),
+              decoration: btmRight(),
+            ),
+            SizedBox(height: 5,),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                addIcon()
+              ],
+            )
+          ],
         )
     );
   }
-  Widget addIcon(rowMap,idx){
+  Widget addIcon(){
     return Container(
       height: 40,
       width: 100,
-      decoration: btmRight(),
       child: ElevatedButton(
           onPressed:(){
+            var rowMap = widget.data[0];
             Map<String,dynamic> newMap = Map.from(rowMap); //Sample data {} taken
             var checkData = sendData();
             if(checkData["res"]){
-              newMap.updateAll((key, value) => value=""); //creating blank data {}
+              newMap.forEach((key, value) {
+                if(value.runtimeType==String || value.runtimeType==int) {
+                  newMap[key]="";
+                } else {
+                  newMap[key]={};
+                }
+              }); //creating blank data {}
+              newMap["flag"]="i";
               widget.data.add(newMap);
               formTxtFiledCntrlList =[];
               setState(()=>{});
             }
           },
-          child: Text("Add"),
-          style: ElevatedButton.styleFrom(
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.zero,
-              ),
-             ),
-            ),
-           );
+           child: Text("Add"),
+           ),
+         );
   }
   Widget delIcon(idx){
     return Container(
@@ -190,10 +205,21 @@ class _CurdFormState extends State<CurdForm> {
       height: 40,
       decoration: btmRight(),
       child: ElevatedButton(
-        onPressed:() {
-          widget.data.removeAt(idx);
-          formTxtFiledCntrlList =[];
-          setState(()=>{});
+        onPressed:(){
+          if(widget.data.length>1){
+            var rw = widget.data[idx];
+            if(rw["flag"]=="i"){
+              widget.data.removeAt(idx);
+            } else {
+              rw["flag"]="d";
+              sendMap["del"].add(rw);
+              widget.data.removeAt(idx);
+            }
+            len=widget.data.length;
+            formTxtFiledCntrlList =[];
+            widget.onChange(sendData());
+            setState(()=>{});
+          }
         },
         child: Text("Delete",),
         style: ElevatedButton.styleFrom(
@@ -231,8 +257,8 @@ class _CurdFormState extends State<CurdForm> {
                 formTxtFiledCntrlList=[];
                 widget.data[idx][currKey]={};
               }
-              setState(()=>{});
               widget.onChange(sendData());
+              setState(()=>{});
             }
         ),Colors.transparent);
   }
@@ -253,7 +279,7 @@ class _CurdFormState extends State<CurdForm> {
               ),
              onChanged:(val){
                widget.data[idx][currKey]=val;
-               if(widDetails.containsKey("upd")) {
+               if(widDetails.containsKey("upd")){
                  widDetails["upd"](widget.data[idx]);
                }
                formTxtFiledCntrlList = [];
@@ -266,11 +292,12 @@ class _CurdFormState extends State<CurdForm> {
     );
   }
   sendData(){
+    updCheck();
     List data=widget.data;
     List widLst = widget.widList;
     for(var i=0;i<widLst.length;i++){
        if(widLst[i].containsKey("check") && widLst[i]["check"]){
-         for(var j=0;j<data.length;j++){
+         for(var j=0;j<len;j++){
            var currData=data[j][headerValues[i]];
            if(widLst[i]["type"]=="txtFld" && (currData=="" || currData==0 || currData==null)){
              sendMap["res"]=false;
@@ -288,6 +315,31 @@ class _CurdFormState extends State<CurdForm> {
     sendMap["data"]=data;
     return sendMap;
   }
+  updCheck(){
+    var widLst = widget.widList;
+    for(var i=0;i<widLst.length;i++){
+      for(var j=0;j<len;j++){
+        if(widLst[i]["type"]=="txtFld"){
+          if(widget.data[j][headerValues[i]]!=backup[j][headerValues[i]]){
+            widget.data[j]["flag"]="u";
+          }
+        } else if(widLst[i]["type"]=="search"){
+          Map kvObj = widget.data[j][headerValues[i]];
+          Map bkpKvObj = backup[j][headerValues[i]];
+          List keys = kvObj.keys.toList();
+          if(bkpKvObj.length != kvObj.length){
+            widget.data[j]["flag"]="u";
+          } else {
+            for(var lst in keys){
+              if(kvObj[lst]!=bkpKvObj[lst]){
+                widget.data[j]["flag"]="u";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
   Widget Txt(flex,val){
     String value = val == "null" ? "" : val;
     return Cell(flex,Text(value,textAlign: TextAlign.center),Colors.black12);
@@ -304,21 +356,7 @@ class _CurdFormState extends State<CurdForm> {
       ),
     );
   }
-  Widget Action(child,color){
-    return Flexible(
-      flex: 1,
-      fit: FlexFit.loose,
-      child: Container(
-          height: 40,
-          child:Center(
-            child: child,
-          ),
-          decoration: topLeft(color)
-      ),
-    );
-  }
 }
-
 Decoration topLeft(color){
   return BoxDecoration(
     color: color,
@@ -348,11 +386,3 @@ Decoration btmRight(){
     ),
   );
 }
-
-// return IconButton(
-//     onPressed: () {
-//       widget.data.removeAt(idx);
-//       formTxtFiledCntrlList =[];
-//       setState(()=>{});
-//     },
-//     icon: Icon(Icons.delete, color: Colors.red,size: 20,));
