@@ -191,7 +191,9 @@ class _CurdFormState extends State<CurdForm> {
               }); //creating blank data {}
               newMap["flag"]="i";
               widget.data.add(newMap);
+              backup.add(newMap);
               formTxtFiledCntrlList =[];
+              widget.onChange(sendData());
               setState(()=>{});
             }
           },
@@ -215,6 +217,7 @@ class _CurdFormState extends State<CurdForm> {
               sendMap["del"].add(rw);
               widget.data.removeAt(idx);
             }
+            backup.removeAt(idx);
             len=widget.data.length;
             formTxtFiledCntrlList =[];
             widget.onChange(sendData());
@@ -318,21 +321,24 @@ class _CurdFormState extends State<CurdForm> {
   updCheck(){
     var widLst = widget.widList;
     for(var i=0;i<widLst.length;i++){
-      for(var j=0;j<len;j++){
-        if(widLst[i]["type"]=="txtFld"){
-          if(widget.data[j][headerValues[i]]!=backup[j][headerValues[i]]){
-            widget.data[j]["flag"]="u";
-          }
-        } else if(widLst[i]["type"]=="search"){
-          Map kvObj = widget.data[j][headerValues[i]];
-          Map bkpKvObj = backup[j][headerValues[i]];
-          List keys = kvObj.keys.toList();
-          if(bkpKvObj.length != kvObj.length){
-            widget.data[j]["flag"]="u";
-          } else {
-            for(var lst in keys){
-              if(kvObj[lst]!=bkpKvObj[lst]){
-                widget.data[j]["flag"]="u";
+      for(var j=0;j<len;j++) {
+        var flag = widget.data[j]["flag"];
+        if (flag == "" || flag == "u") {
+          if (widLst[i]["type"] == "txtFld") {
+            if (widget.data[j][headerValues[i]] != backup[j][headerValues[i]]) {
+              widget.data[j]["flag"] = "u";
+            }
+          } else if (widLst[i]["type"] == "search") {
+            Map kvObj = widget.data[j][headerValues[i]];
+            Map bkpKvObj = backup[j][headerValues[i]];
+            List keys = kvObj.keys.toList();
+            if (bkpKvObj.length != kvObj.length) {
+              widget.data[j]["flag"] = "u";
+            } else {
+              for (var lst in keys) {
+                if (kvObj[lst] != bkpKvObj[lst]) {
+                  widget.data[j]["flag"] = "u";
+                }
               }
             }
           }
