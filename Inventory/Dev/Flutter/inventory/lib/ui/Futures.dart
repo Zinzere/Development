@@ -12,6 +12,8 @@ class Futures extends StatefulWidget {
 class _FuturesState extends State<Futures> {
   Future _future;
   bool _refresh;
+  bool _isDataCheck = true;
+  Widget returnWidget = SizedBox();
   @override
   initState(){
     _future = widget.future;
@@ -23,10 +25,15 @@ class _FuturesState extends State<Futures> {
     if(_refresh){ _future=widget.future; }
       return FutureBuilder(builder: (ctx, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasData && snapshot.data["res"]) {
-               return widget.child(snapshot.data["data"]);
-          } else {
-              return Center(child: Text(snapshot.data["err"]),);
+          if(snapshot.hasData) {
+            if (snapshot.data["res"] && _isDataCheck) {
+              returnWidget = widget.child(snapshot.data["data"]);
+              return returnWidget;
+            } else if(!_isDataCheck) {
+              return returnWidget;
+            } else {
+              return  Center(child: Text(snapshot.data["err"]),);
+            }
           }
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
