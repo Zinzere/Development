@@ -78,7 +78,7 @@ class _CurdFormState extends State<CurdForm> {
   @override
   Widget build(BuildContext context){
     len=widget.data.length;
-    if(headerKeys.length==0){
+    if(backup.length!=len){
       backup=jsonDecode(jsonEncode(widget.data));
       headerKeys = widget.headerList.keys.toList();
       if(widget.action){
