@@ -1,9 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:inventory/ui/AllUi.dart';
+import '../layout/AllLayout.dart';
 import '../ui/SearchField.dart';
 import 'package:flutter/services.dart';
+//if no flag => flag="n";flag="d";flag="i";flag="u";
 
 /*
 Container(
@@ -47,8 +48,6 @@ Container(
   }
 */
 
-List<dynamic> formTxtFiledCntrlList = [];
-
 class CurdForm extends StatefulWidget {
   const CurdForm({@required
                   this.headerList,
@@ -75,6 +74,8 @@ class _CurdFormState extends State<CurdForm> {
   bool updTextFldCntrlBool = true;
   Map sendMap = {"res":false,"data":[],"del":[]};
   List backup = [];
+  List<dynamic> formTxtFiledCntrlList = [];
+
   @override
   Widget build(BuildContext context){
     len=widget.data.length;
@@ -89,6 +90,7 @@ class _CurdFormState extends State<CurdForm> {
         vals["flag"]="";
       }
     }
+    formTxtFiledCntrlList=[];
     Widget Rows(rowMap){
       List<Widget> rows=[];
       idx = formTxtFiledCntrlList.length;
@@ -143,7 +145,7 @@ class _CurdFormState extends State<CurdForm> {
                             child: Text(headerKeys[i], style: TextStyle(fontWeight: FontWeight.bold),),
                           ),
                         height: 30,
-                        decoration: topLeft(Colors.transparent),
+                        decoration: curdTopLeft(Colors.transparent),
                       ) : Expanded(
                         flex: widget.flex[i],
                         child: Container(
@@ -151,7 +153,7 @@ class _CurdFormState extends State<CurdForm> {
                             child: Text(headerKeys[i], style: TextStyle(fontWeight: FontWeight.bold),),
                           ),
                           height: 30,
-                          decoration: topLeft(Colors.transparent),
+                          decoration: curdTopLeft(Colors.transparent),
                         ),
                       ),
                     ],
@@ -192,7 +194,6 @@ class _CurdFormState extends State<CurdForm> {
               newMap["flag"]="i";
               widget.data.add(newMap);
               backup.add(newMap);
-              formTxtFiledCntrlList =[];
               widget.onChange(sendData());
               setState(()=>{});
             }
@@ -207,10 +208,10 @@ class _CurdFormState extends State<CurdForm> {
       height: 40,
       decoration: btmRight(),
       child: ElevatedButton(
-        onPressed:(){
-          if(widget.data.length>1){
+        onPressed:() {
+          if(widget.data.length>1) {
             var rw = widget.data[idx];
-            if(rw["flag"]=="i"){
+            if(rw["flag"]=="i") {
               widget.data.removeAt(idx);
             } else {
               rw["flag"]="d";
@@ -219,7 +220,6 @@ class _CurdFormState extends State<CurdForm> {
             }
             backup.removeAt(idx);
             len=widget.data.length;
-            formTxtFiledCntrlList =[];
             widget.onChange(sendData());
             setState(()=>{});
           }
@@ -254,10 +254,8 @@ class _CurdFormState extends State<CurdForm> {
             futureOrList: futureCall,
             onSelected:(val){
               if(val.length>0) {
-                formTxtFiledCntrlList=[];
-                widget.data[idx][currKey]=val; //Issue here | When select search values changing
+                widget.data[idx][currKey]=val;
               } else {
-                formTxtFiledCntrlList=[];
                 widget.data[idx][currKey]={};
               }
               widget.onChange(sendData());
@@ -285,7 +283,6 @@ class _CurdFormState extends State<CurdForm> {
                if(widDetails.containsKey("upd")){
                  widDetails["upd"](widget.data[idx]);
                }
-               formTxtFiledCntrlList = [];
                setState(()=>{});
                widget.onChange(sendData());
              },
@@ -358,12 +355,12 @@ class _CurdFormState extends State<CurdForm> {
           child:Center(
             child: child,
           ),
-          decoration: topLeft(color)
+          decoration: curdTopLeft(color)
       ),
     );
   }
 }
-Decoration topLeft(color){
+Decoration curdTopLeft(color){
   return BoxDecoration(
     color: color,
     border: Border(
@@ -375,20 +372,6 @@ Decoration topLeft(color){
           width: 1,
           color: Colors.black26
       ),
-    ),
-  );
-}
-Decoration btmRight(){
-  return const BoxDecoration(
-    border: Border(
-        bottom: BorderSide(
-            width: 1,
-            color: Colors.black26
-        ),
-        right: BorderSide(
-            width: 1,
-            color: Colors.black26
-        )
     ),
   );
 }
