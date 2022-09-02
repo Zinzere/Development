@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class Date extends StatefulWidget {
-  Date({@required this.date,this.onSelected, this.pad});
+  Date({@required this.date,this.onSelected, this.pad,this.label});
   final String date;
-  final Padding pad;
+  final EdgeInsets pad;
+  final String label;
   final ValueChanged<dynamic> onSelected;
 
   @override
@@ -12,11 +13,19 @@ class Date extends StatefulWidget {
 
 class _DateState extends State<Date> {
   String dte = "";
+  Map dates = {};
 
   @override
   Widget build(BuildContext context) {
-    var dates = widget.date==null ? Format(DateTime.now()) : Format(widget.date);
-    if(dte=="") { dte = dates["Y"]; }
+    
+    if(widget.date==""){
+      dates = Format(DateTime.now());
+      dte = dates["Y"];
+    } else {
+      dates = Format(DateTime.parse(widget.date));
+      dte = dates["Y"];
+    }        
+    
     return Padding(
       padding: widget.pad ?? EdgeInsets.all(20),
       child: GestureDetector(
