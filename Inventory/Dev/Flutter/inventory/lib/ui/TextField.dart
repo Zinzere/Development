@@ -55,6 +55,7 @@ class _TFPlainState extends State<TFPlain> {
       textCapitalization: widget.textCapital ?? TextCapitalization.sentences,
       keyboardType: widget.inputType ?? TextInputType.text,
       controller: widget.cntrolr,
+      onChanged: widget.onChanged,
       decoration: widget.icon==null ? noIcon(widget.label) : icon(widget.icon,widget.label)
     );
   }
@@ -96,6 +97,7 @@ class _TFRoundState extends State<TFRound> {
       textCapitalization: TextCapitalization.sentences,
       keyboardType: widget.inputType ?? TextInputType.text,
       controller: widget.cntrolr,
+      onChanged: widget.onChanged,      
       decoration: InputDecoration(
           labelText: widget.label,
           labelStyle: labelStyle,
@@ -128,6 +130,7 @@ class _TFSQuareState extends State<TFSQuare> {
       textCapitalization: TextCapitalization.sentences,
       keyboardType: widget.inputType ?? TextInputType.text,
       controller: widget.cntrolr,
+      onChanged: widget.onChanged,      
         decoration: InputDecoration(
           labelText: widget.label,
           labelStyle: labelStyle,
